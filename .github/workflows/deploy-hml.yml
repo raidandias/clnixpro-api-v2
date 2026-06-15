@@ -1,0 +1,59 @@
+name: Deploy Homologation Environment
+
+on:
+  push:
+    branches:
+      - homologation
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: homologation
+
+    services:
+      postgres:
+        image: postgres:13
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mydatabase
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '20'
+
+    - name: Install pnpm
+      run: npm install -g pnpm
+
+    - name: Install dependencies
+      run: pnpm install
+
+    - name: Build project
+      run: pnpm run build
+
+    - name: Start ssh-agent
+      uses: webfactory/ssh-agent@v0.5.4
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_HML }}
+
+    - name: Deploy to homologation server
+      env:
+        SSH_HOST: ${{ secrets.SSH_HOST_HML }}
+        SSH_USER: ${{ secrets.SSH_USER_HML }}
+      run: |
+        ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "
+        cd /srv/clinixpro/swarm-devops/homologation
+        ./deploy.sh
+        "

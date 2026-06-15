@@ -1,0 +1,16 @@
+{
+  "Error fetching users": "Erro ao buscar usuários",
+  "Internal Server Error": "Erro Interno do Servidor",
+  "Email is already in use": "O email já está em uso",
+  "User not found": "Usuário não encontrado",
+  "Unexpected field": "Campo inesperado",
+  "Document type already exists": "Um documento desse tipo já existe",
+  "Document not found or does not belong to the user": "Documento não encontrado ou não pertence ao usuário",
+  "Invalid Credentials": "Credenciais inválidas",
+  "User already exists": "Usuário já existe",
+  "Email send sucess.": "Email enviado com sucesso.",
+  "Code verify with success": "Verificação de código com sucesso",
+  "Password confirmation does not match": "A confirmação de senha não confere",
+  "Password confirmation with sucess": "Senha alterada com sucesso",
+  "Code is expired or invalid": "O código está expirado ou inválido"
+}

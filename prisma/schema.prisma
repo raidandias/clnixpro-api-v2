@@ -1,0 +1,950 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                   String
+  email                  String                @unique
+  password               String
+  photo                  String?               @db.VarChar(255)
+  countryCodePhone       String?
+  areaCodePhone          String?
+  phoneNumber            String?
+  dateOfBirth            String?
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  deletedAt              DateTime?
+  userStatus             UserStatus            @default(ENABLE)
+  address                Address[]
+  userDocuments          UserDocument[]
+  accountUsers           AccountUser[]
+  userResetPasswords     UserResetPassword[]
+  patients               Patient[]
+  professionals          Professional[]
+  customers              Customer[]
+  hostedSchedules        Schedule[]            @relation("ScheduleHost")
+  scheduleParticipations ScheduleParticipant[]
+}
+
+model UserResetPassword {
+  id        String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String                  @db.Uuid
+  token     String
+  status    UserResetPasswordStatus @default(SEND)
+  expiresAt DateTime
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+  deletedAt DateTime?
+  user      User                    @relation(fields: [userId], references: [id])
+}
+
+enum UserResetPasswordStatus {
+  SEND
+  VERIFY
+  CHANGE
+  FINALLY
+}
+
+enum UserStatus {
+  ENABLE
+  DISABLE
+  WAITING_CONFIRMATION
+}
+
+model Address {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @db.Uuid
+  label      String    @default("Meu Endereço")
+  street     String
+  city       String
+  state      String
+  country    String
+  complement String?
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+  user       User      @relation(fields: [userId], references: [id])
+}
+
+model Document {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type          DocumentType
+  number        String
+  filePath      String?
+  filePathBack  String?
+  status        DocumentStatus @default(AWAITING_VERIFICATION)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  userDocuments UserDocument[]
+}
+
+enum DocumentType {
+  RG
+  CPF
+  PASSPORT
+  CNH
+  CNPJ
+}
+
+enum DocumentStatus {
+  SENT
+  AWAITING_VERIFICATION
+  VERIFIED
+}
+
+model UserDocument {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @db.Uuid
+  documentId String    @db.Uuid
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+  user       User      @relation(fields: [userId], references: [id])
+  document   Document  @relation(fields: [documentId], references: [id])
+}
+
+model Account {
+  id                         String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                       String
+  corporateName              String?
+  fantasyName                String?
+  photo                      String?
+  segment                    String?
+  document                   String
+  documentType               String?
+  domain                     String?
+  email                      String?
+  street                     String?
+  state                      String?
+  city                       String?
+  neighborhood               String?
+  country                    String?
+  zipCode                    String?
+  complement                 String?
+  status                     AccountStatus               @default(WAITING_APPROVAL)
+  countryCodePhone           String?
+  areaCodePhone              String?
+  phoneNumber                String?
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  deletedAt                  DateTime?
+  users                      AccountUser[]
+  files                      Files[]
+  patients                   Patient[]
+  patientCards               HealthPatientCard[]
+  professionals              Professional[]
+  professionalItems          ProfessionalItem[]
+  items                      Item[]
+  itemCatalogs               ItemCatalog[]
+  itemHealthInsurances       ItemHealthInsurance[]
+  itemExams                  ItemExam[]
+  itemStocks                 ItemStock[]
+  itemInstruments            ItemInstrument[]
+  healthInsurances           HealthInsurance[]
+  healthMedicalCares         HealthMedicalCare[]
+  healthMedicalCareFiles     HealthMedicalCareFile[]
+  schedules                  Schedule[]
+  schedulesLog               ScheduleLogs[]
+  orders                     Order[]
+  orderItems                 OrderItem[]
+  orderProfessionals         OrderProfessional[]
+  orderProfessionalSchedules OrderProfessionalSchedule[]
+  orderPayments              OrderPayment[]
+  orderPaymentCurrencys      OrderPaymentCurrency[]
+  benefits                   Benefit[]
+  benefitItems               BenefitItem[]
+  benefitPacients            BenefitPacient[]
+  suppliers                  Supplier[]
+  customers                  Customer[]
+  invoiceReceivables         InvoiceReceivable[]
+  invoicePayments            InvoicePayment[]
+  invoicePayables            InvoicePayable[]
+  invoiceReceivableBillets   InvoiceReceivableBillet[]
+  invoiceReceivablePixs      InvoiceReceivablePix[]
+  invoiceReceivableCards     InvoiceReceivableCard[]
+  balances                   Balance[]
+  statements                 Statement[]
+}
+
+enum AccountStatus {
+  ENABLED
+  DISABLED
+  WAITING_APPROVAL
+}
+
+model AccountUser {
+  id        String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId String            @db.Uuid
+  userId    String            @db.Uuid
+  status    AccountUserStatus
+  type      AccountUserType
+  position  String
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  deletedAt DateTime?
+  account   Account           @relation(fields: [accountId], references: [id])
+  user      User              @relation(fields: [userId], references: [id])
+}
+
+enum AccountUserStatus {
+  ENABLED
+  DISABLED
+  WAITING_APPROVAL
+}
+
+enum AccountUserType {
+  TEAM
+  ADMIN
+  STUDENT
+}
+
+enum ItemCategory {
+  SERVICE
+  PRODUCT
+  PROCEDURE
+  EXAM
+}
+
+model Item {
+  id                   String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId            String                @db.Uuid
+  supplierId           String?               @db.Uuid
+  name                 String                @db.VarChar(255)
+  description          String                @db.Text
+  category             ItemCategory          @default(SERVICE)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  deletedAt            DateTime?
+  account              Account               @relation(fields: [accountId], references: [id])
+  supplier             Supplier?             @relation(fields: [supplierId], references: [id])
+  itemCatalogs         ItemCatalog[]
+  orderItems           OrderItem[]
+  orderPayments        OrderPayment[]
+  benefitItems         BenefitItem[]
+  itemHealthInsurances ItemHealthInsurance[]
+  itemInstruments      ItemInstrument[]
+  itemExams            ItemExam[]
+  professionalItems    ProfessionalItem[]
+  schedules            Schedule[]
+}
+
+model ItemCatalog {
+  id                         String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  itemId                     String                @db.Uuid
+  accountId                  String                @db.Uuid
+  name                       String
+  title                      String?
+  description                String?
+  price                      Decimal               @default(0.00) @db.Decimal
+  costPrice                  Decimal               @default(0.00) @db.Decimal
+  flagBenefit                Boolean?              @default(false)
+  manufacturer               String?               @db.VarChar(255)
+  duration                   Int?
+  bodyMembers                BodyMembers           @default(ARMS)
+  typeExam                   String?               @db.VarChar(255)
+  protocol                   String?               @db.VarChar(255)
+  indications                String?               @db.Text
+  observationForProfessional String?               @default("") @db.Text
+  observationForPatient      String?               @default("") @db.Text
+  expiryAt                   DateTime?
+  createdAt                  DateTime              @default(now())
+  updatedAt                  DateTime              @updatedAt
+  deletedAt                  DateTime?
+  account                    Account               @relation(fields: [accountId], references: [id])
+  item                       Item                  @relation(fields: [itemId], references: [id])
+  itemStocks                 ItemStock[]
+  itemHealthInsurances       ItemHealthInsurance[]
+  itemInstrumentsProduct     ItemInstrument[]      @relation("ItemCatalogProductInstrument")
+  itemInstrumentsService     ItemInstrument[]      @relation("ItemCatalogServiceInstrument")
+  itemExamsExams             ItemExam[]            @relation("ItemCatalogExamItemExam")
+  itemExamsService           ItemExam[]            @relation("ItemCatalogServiceItemExam")
+  professionalItems          ProfessionalItem[]
+  schedules                  Schedule[]
+  orderItems                 OrderItem[]
+  benefitItems               BenefitItem[]
+}
+
+model ItemStock {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId     String      @db.Uuid
+  itemCatalogId String      @db.Uuid
+  currentAmount Int         @default(0)
+  outputAmount  Int         @default(0)
+  location      String      @db.VarChar(255)
+  entryAt       DateTime    @default(now())
+  outputAt      DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+  account       Account     @relation(fields: [accountId], references: [id])
+  itemCatalog   ItemCatalog @relation(fields: [itemCatalogId], references: [id])
+}
+
+enum BodyMembers {
+  ARMS //Braços
+  SHOULDERS //Ombros
+  FOREARMS //Antebraços
+  HANDS //Mãos
+  STEM //Tronco
+  ABDOMEN //Abdômen
+  HIP //Quadril
+  THIGHS //Coxas
+  LEGS //Pernas
+  FEET //Pés
+}
+
+model HealthInsurance {
+  id                   String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId            String                @db.Uuid
+  name                 String                @db.VarChar(255)
+  flagCoperate         Boolean               @default(false)
+  costPrice            Decimal               @default(0.00) @db.Decimal
+  dateOfBirthday       DateTime
+  pathDocument         String?               @db.VarChar(255)
+  pathLogo             String?               @db.VarChar(255)
+  typeReturn           TypeReturn            @default(NOT_RETURN)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  deletedAt            DateTime?
+  account              Account               @relation(fields: [accountId], references: [id])
+  itemHealthInsurances ItemHealthInsurance[]
+  orders               Order[]
+  suppliers            Supplier[]
+}
+
+model ItemHealthInsurance {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId         String          @db.Uuid
+  itemId            String          @db.Uuid
+  itemCatalogId     String          @db.Uuid
+  healthInsuranceId String          @db.Uuid
+  paymentValue      Decimal         @default(0.00) @db.Decimal
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  deletedAt         DateTime?
+  account           Account         @relation(fields: [accountId], references: [id])
+  item              Item            @relation(fields: [itemId], references: [id])
+  itemCatalog       ItemCatalog     @relation(fields: [itemCatalogId], references: [id])
+  healthInsurance   HealthInsurance @relation(fields: [healthInsuranceId], references: [id])
+}
+
+enum TypeReturn {
+  NOT_RETURN
+  WITH_RETURN
+}
+
+model ItemInstrument {
+  id                   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId            String      @db.Uuid
+  itemId               String      @db.Uuid
+  itemCatalogProductId String      @db.Uuid
+  itemCatalogServiceId String      @db.Uuid
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  deletedAt            DateTime?
+  item                 Item        @relation(fields: [itemId], references: [id])
+  account              Account     @relation(fields: [accountId], references: [id])
+  itemCatalogProduct   ItemCatalog @relation("ItemCatalogProductInstrument", fields: [itemCatalogProductId], references: [id])
+  itemCatalogService   ItemCatalog @relation("ItemCatalogServiceInstrument", fields: [itemCatalogServiceId], references: [id])
+}
+
+model ItemExam {
+  id                   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId            String      @db.Uuid
+  itemId               String      @db.Uuid
+  itemCatalogExamId    String      @db.Uuid
+  itemCatalogServiceId String      @db.Uuid
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  deletedAt            DateTime?
+  item                 Item        @relation(fields: [itemId], references: [id])
+  account              Account     @relation(fields: [accountId], references: [id])
+  itemCatalogExam      ItemCatalog @relation("ItemCatalogExamItemExam", fields: [itemCatalogExamId], references: [id])
+  itemCatalogService   ItemCatalog @relation("ItemCatalogServiceItemExam", fields: [itemCatalogServiceId], references: [id])
+}
+
+model Patient {
+  id                     String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                 String                @db.Uuid
+  accountId              String                @db.Uuid
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  deletedAt              DateTime?
+  user                   User                  @relation(fields: [userId], references: [id])
+  account                Account               @relation(fields: [accountId], references: [id])
+  schedules              Schedule[]
+  healthPatientCards     HealthPatientCard[]
+  healthMedicalCares     HealthMedicalCare[]
+  orders                 Order[]
+  benefitPacients        BenefitPacient[]
+  scheduleParticipations ScheduleParticipant[]
+}
+
+model HealthPatientCard {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  benefitId   String?   @db.Uuid
+  accountId   String    @db.Uuid
+  patientId   String    @db.Uuid
+  cardNumber  String    @unique
+  patientName String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  benefit     Benefit?  @relation(fields: [benefitId], references: [id])
+  patient     Patient   @relation(fields: [patientId], references: [id])
+  account     Account   @relation(fields: [accountId], references: [id])
+}
+
+model Professional {
+  id                     String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                 String                @db.Uuid
+  accountId              String                @db.Uuid
+  ocupation              String
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  deletedAt              DateTime?
+  account                Account               @relation(fields: [accountId], references: [id])
+  user                   User                  @relation(fields: [userId], references: [id])
+  professionalItems      ProfessionalItem[]
+  hostedSchedules        Schedule[]            @relation("ScheduleHost")
+  schedulesLogs          ScheduleLogs[]
+  healthMedicalCares     HealthMedicalCare[]
+  orderProfessionals     OrderProfessional[]
+  suppliers              Supplier[]
+  scheduleParticipations ScheduleParticipant[]
+}
+
+model ProfessionalItem {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professionalId  String        @db.Uuid
+  itemId          String        @db.Uuid
+  itemCatalogId   String        @db.Uuid
+  accountId       String        @db.Uuid
+  formOfPayment   FormOfPayment @default(FIXED)
+  valuePayment    Decimal       @default(0.00) @db.Decimal
+  percentageValue Decimal       @default(0.00) @db.Decimal
+  paymentAt       DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?
+  account         Account       @relation(fields: [accountId], references: [id])
+  professional    Professional  @relation(fields: [professionalId], references: [id])
+  item            Item          @relation(fields: [itemId], references: [id])
+  itemCatalog     ItemCatalog   @relation(fields: [itemCatalogId], references: [id])
+}
+
+enum FormOfPayment {
+  FIXED
+  PERCENTAGE
+}
+
+enum ScheduleStatus {
+  WAITING
+  CONFIRMED
+  CANCELED
+  COMPLETED
+}
+
+model Schedule {
+  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId          String         @db.Uuid
+  hostUserId         String         @db.Uuid // User responsável pelo agendamento
+  hostProfessionalId String         @db.Uuid // Professional responsável pelo agendamento
+  patientId          String         @db.Uuid // Patient do agendamento
+  itemId             String         @db.Uuid
+  itemCatalogId      String         @db.Uuid
+  status             ScheduleStatus @default(WAITING)
+  startAt            DateTime
+  endAt              DateTime
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  deletedAt          DateTime?
+
+  account                    Account                     @relation(fields: [accountId], references: [id])
+  hostUser                   User                        @relation("ScheduleHost", fields: [hostUserId], references: [id])
+  hostProfessional           Professional                @relation("ScheduleHost", fields: [hostProfessionalId], references: [id])
+  patient                    Patient                     @relation(fields: [patientId], references: [id])
+  item                       Item                        @relation(fields: [itemId], references: [id])
+  itemCatalog                ItemCatalog                 @relation(fields: [itemCatalogId], references: [id])
+  scheduleLogs               ScheduleLogs[]
+  healthMedicalCares         HealthMedicalCare[]
+  orderProfessionalSchedules OrderProfessionalSchedule[]
+  participants               ScheduleParticipant[]
+}
+
+enum ParticipantStatus {
+  PENDING // Aguardando confirmação
+  CONFIRMED // Confirmou presença
+  DECLINED // Recusou
+  CANCELED // Cancelou após confirmar
+  RESCHEDULED // Solicitou remarcação
+}
+
+model ScheduleParticipant {
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scheduleId     String            @db.Uuid
+  userId         String            @db.Uuid
+  patientId      String?           @db.Uuid // Optional: when participant is a patient
+  professionalId String?           @db.Uuid // Optional: when participant is a professional
+  isHost         Boolean           @default(false)
+  status         ParticipantStatus @default(PENDING)
+  confirmedAt    DateTime? // Data/hora da confirmação
+  declinedAt     DateTime? // Data/hora da recusa
+  canceledAt     DateTime? // Data/hora do cancelamento
+  rescheduledAt  DateTime? // Data/hora da solicitação de remarcação
+  rescheduledTo  DateTime? // Data/hora sugerida para remarcação
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  deletedAt      DateTime?
+
+  schedule     Schedule      @relation(fields: [scheduleId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
+  patient      Patient?      @relation(fields: [patientId], references: [id])
+  professional Professional? @relation(fields: [professionalId], references: [id])
+
+  @@unique([scheduleId, userId])
+  @@index([scheduleId])
+  @@index([userId])
+}
+
+model ScheduleLogs {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId      String       @db.Uuid
+  professionalId String       @db.Uuid
+  scheduleId     String       @db.Uuid
+  description    String       @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+  account        Account      @relation(fields: [accountId], references: [id])
+  professional   Professional @relation(fields: [professionalId], references: [id])
+  schedule       Schedule     @relation(fields: [scheduleId], references: [id])
+}
+
+model HealthMedicalCare {
+  id                     String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId              String                  @db.Uuid
+  professionalId         String                  @db.Uuid
+  patientId              String                  @db.Uuid
+  scheduleId             String                  @db.Uuid
+  description            String                  @db.Text
+  observation            String?                 @db.Text
+  prescription           String?                 @db.Text
+  status                 HealthMedicalCareStatus @default(WAITING)
+  startAt                DateTime
+  endAt                  DateTime
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  deletedAt              DateTime?
+  account                Account                 @relation(fields: [accountId], references: [id])
+  professional           Professional            @relation(fields: [professionalId], references: [id])
+  patient                Patient                 @relation(fields: [patientId], references: [id])
+  schedule               Schedule                @relation(fields: [scheduleId], references: [id])
+  healthMedicalCareFiles HealthMedicalCareFile[]
+}
+
+model HealthMedicalCareFile {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId           String            @db.Uuid
+  healthMedicalCareId String            @db.Uuid
+  pathFile            String            @db.VarChar(255)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  deletedAt           DateTime?
+  account             Account           @relation(fields: [accountId], references: [id])
+  healthMedicalCare   HealthMedicalCare @relation(fields: [healthMedicalCareId], references: [id])
+}
+
+enum HealthMedicalCareStatus {
+  WAITING
+  CONFIRMED
+  CANCELED
+  IN_PROGRESS
+}
+
+model Files {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId String    @db.Uuid
+  name      String
+  path      String    @unique
+  type      String
+  account   Account   @relation(fields: [accountId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model Order {
+  id                         String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId                  String                      @db.Uuid
+  patientId                  String                      @db.Uuid
+  healthInsuranceId          String?                     @db.Uuid
+  status                     OrderStatus                 @default(WAITING)
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  deletedAt                  DateTime?
+  account                    Account                     @relation(fields: [accountId], references: [id])
+  patient                    Patient                     @relation(fields: [patientId], references: [id])
+  healthInsurance            HealthInsurance?            @relation(fields: [healthInsuranceId], references: [id])
+  orderProfessionals         OrderProfessional[]
+  orderProfessionalSchedules OrderProfessionalSchedule[]
+  orderPayments              OrderPayment[]
+  orderPaymentCurrencys      OrderPaymentCurrency[]
+  invoiceReceivables         InvoiceReceivable[]
+  invoicePayables            InvoicePayable[]
+  orderItems                 OrderItem[]
+}
+
+model OrderItem {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId          String              @db.Uuid
+  orderId            String              @db.Uuid
+  itemId             String              @db.Uuid
+  itemCatalogId      String              @db.Uuid
+  quantity           Int                 @default(1)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  order              Order               @relation(fields: [orderId], references: [id])
+  item               Item                @relation(fields: [itemId], references: [id])
+  account            Account             @relation(fields: [accountId], references: [id])
+  itemCatalog        ItemCatalog         @relation(fields: [itemCatalogId], references: [id])
+  orderProfessionals OrderProfessional[]
+}
+
+model OrderProfessional {
+  id                         String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId                  String                      @db.Uuid
+  orderId                    String                      @db.Uuid
+  orderItemId                String?                     @db.Uuid
+  professionalId             String                      @db.Uuid
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  deletedAt                  DateTime?
+  account                    Account                     @relation(fields: [accountId], references: [id])
+  order                      Order                       @relation(fields: [orderId], references: [id])
+  professional               Professional                @relation(fields: [professionalId], references: [id])
+  orderItem                  OrderItem?                  @relation(fields: [orderItemId], references: [id])
+  orderProfessionalSchedules OrderProfessionalSchedule[]
+}
+
+model OrderProfessionalSchedule {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId           String            @db.Uuid
+  orderId             String            @db.Uuid
+  orderProfessionalId String            @db.Uuid
+  sheduleId           String?           @db.Uuid
+  startAt             DateTime
+  endAt               DateTime
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  deletedAt           DateTime?
+  account             Account           @relation(fields: [accountId], references: [id])
+  order               Order             @relation(fields: [orderId], references: [id])
+  orderProfessional   OrderProfessional @relation(fields: [orderProfessionalId], references: [id])
+  schedule            Schedule?         @relation(fields: [sheduleId], references: [id])
+}
+
+enum OrderStatus {
+  WAITING
+  CONFIRMED
+  CANCELED
+}
+
+model OrderPayment {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId             String                 @db.Uuid
+  orderId               String                 @db.Uuid
+  orderItemId           String                 @db.Uuid
+  professionalId        String                 @db.Uuid
+  valuePayment          Decimal                @default(0.00) @db.Decimal
+  valueDiscount         Decimal                @default(0.00) @db.Decimal
+  valueTotal            Decimal                @default(0.00) @db.Decimal
+  paymentAt             DateTime               @default(now())
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+  order                 Order                  @relation(fields: [orderId], references: [id])
+  account               Account                @relation(fields: [accountId], references: [id])
+  item                  Item                   @relation(fields: [orderItemId], references: [id])
+  orderPaymentCurrencys OrderPaymentCurrency[]
+}
+
+model OrderPaymentCurrency {
+  id                    String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId             String                @db.Uuid
+  orderId               String                @db.Uuid
+  orderPaymentId        String                @db.Uuid
+  typeCurrencyExchange  TypeCurrencyExchange  @default(BRL)
+  valueReceived         Decimal               @default(0.00) @db.Decimal
+  value                 Decimal               @default(0.00) @db.Decimal
+  formOfPaymentCurrency FormOfPaymentCurrency @default(CASH)
+  paymentAt             DateTime              @default(now())
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  deletedAt             DateTime?
+  account               Account               @relation(fields: [accountId], references: [id])
+  order                 Order                 @relation(fields: [orderId], references: [id])
+  orderPayment          OrderPayment          @relation(fields: [orderPaymentId], references: [id])
+}
+
+enum TypeCurrencyExchange {
+  USD
+  BRL
+  EUR
+}
+
+enum FormOfPaymentCurrency {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  PIX
+  TRANSFER
+  BILLET
+  CHECK
+}
+
+model Benefit {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId          String              @db.Uuid
+  name               String
+  description        String
+  valuePrice         Decimal             @default(0.00) @db.Decimal
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  account            Account             @relation(fields: [accountId], references: [id])
+  benefitItems       BenefitItem[]
+  benefitPacients    BenefitPacient[]
+  healthPatientCards HealthPatientCard[]
+}
+
+model BenefitItem {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId     String      @db.Uuid
+  benefitId     String      @db.Uuid
+  itemId        String      @db.Uuid
+  itemCatalogId String      @db.Uuid
+  valuePrice    Decimal     @default(0.00) @db.Decimal
+  discount      Decimal     @default(0.00) @db.Decimal
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+  benefit       Benefit     @relation(fields: [benefitId], references: [id])
+  item          Item        @relation(fields: [itemId], references: [id])
+  itemCatalog   ItemCatalog @relation(fields: [itemCatalogId], references: [id])
+  account       Account     @relation(fields: [accountId], references: [id])
+}
+
+model BenefitPacient {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId String        @db.Uuid
+  benefitId String        @db.Uuid
+  patientId String        @db.Uuid
+  status    BenefitStatus @default(WAITING_PAYMENT)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  deletedAt DateTime?
+  benefit   Benefit       @relation(fields: [benefitId], references: [id])
+  patient   Patient       @relation(fields: [patientId], references: [id])
+  account   Account       @relation(fields: [accountId], references: [id])
+}
+
+enum BenefitStatus {
+  FROZEN
+  ENABLED
+  DISABLED
+  CANCELED
+  WAITING_PAYMENT
+}
+
+//finaneiro
+model Supplier {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId         String           @db.Uuid
+  professionalId    String?          @db.Uuid
+  healthInsuranceId String?          @db.Uuid
+  name              String
+  email             String?
+  phone             String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  deletedAt         DateTime?
+  account           Account          @relation(fields: [accountId], references: [id])
+  professional      Professional?    @relation(fields: [professionalId], references: [id])
+  healthInsurance   HealthInsurance? @relation(fields: [healthInsuranceId], references: [id])
+  items             Item[]
+  invoicePayables   InvoicePayable[]
+}
+
+model Customer {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId          String              @db.Uuid
+  userId             String              @db.Uuid
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  account            Account             @relation(fields: [accountId], references: [id])
+  user               User                @relation(fields: [userId], references: [id])
+  invoiceReceivables InvoiceReceivable[]
+}
+
+model InvoiceReceivable {
+  id                       String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId                String                    @db.Uuid
+  orderId                  String                    @db.Uuid
+  customerId               String                    @db.Uuid
+  authorizationNumber      String?
+  installment              Int                       @default(1)
+  valueTotal               Decimal                   @default(0.00) @db.Decimal
+  valueDiscount            Decimal                   @default(0.00) @db.Decimal
+  valueFeesFixed           Decimal                   @default(0.00) @db.Decimal
+  valueFeesPercent         Decimal                   @default(0.00) @db.Decimal
+  dueAt                    DateTime
+  paymentAt                DateTime?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  deletedAt                DateTime?
+  account                  Account                   @relation(fields: [accountId], references: [id])
+  customer                 Customer                  @relation(fields: [customerId], references: [id])
+  order                    Order                     @relation(fields: [orderId], references: [id])
+  invoicePayments          InvoicePayment[]
+  statements               Statement[]
+  invoiceReceivableBillets InvoiceReceivableBillet[]
+  invoiceReceivablePixs    InvoiceReceivablePix[]
+  invoiceReceivableCards   InvoiceReceivableCard[]
+}
+
+model InvoicePayable {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId        String           @db.Uuid
+  supplierId       String           @db.Uuid
+  orderId          String?          @db.Uuid
+  valueTotal       Decimal          @default(0.00) @db.Decimal
+  valueDiscount    Decimal          @default(0.00) @db.Decimal
+  valueFeesFixed   Decimal          @default(0.00) @db.Decimal
+  valueFeesPercent Decimal          @default(0.00) @db.Decimal
+  dueAt            DateTime
+  paymentAt        DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+  account          Account          @relation(fields: [accountId], references: [id])
+  supplier         Supplier         @relation(fields: [supplierId], references: [id])
+  order            Order?           @relation(fields: [orderId], references: [id])
+  invoicePayments  InvoicePayment[]
+  statements       Statement[]
+}
+
+model InvoicePayment {
+  id                   String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId            String                @db.Uuid
+  invoiceReceivableId  String?               @db.Uuid
+  invoicePayableId     String?               @db.Uuid
+  descriptionDenied    String?
+  valuePayment         Decimal               @default(0.00) @db.Decimal
+  valueDiscount        Decimal               @default(0.00) @db.Decimal
+  valueFeesFixed       Decimal               @default(0.00) @db.Decimal
+  valueFeesPercent     Decimal               @default(0.00) @db.Decimal
+  formOfPayment        FormOfPaymentCurrency @default(CASH)
+  typeCurrencyExchange TypeCurrencyExchange  @default(BRL)
+  paymentAt            DateTime
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  deletedAt            DateTime?
+  account              Account               @relation(fields: [accountId], references: [id])
+  invoiceReceivable    InvoiceReceivable?    @relation(fields: [invoiceReceivableId], references: [id])
+  invoicePayable       InvoicePayable?       @relation(fields: [invoicePayableId], references: [id])
+  statements           Statement[]
+}
+
+model InvoiceReceivableBillet {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId           String            @db.Uuid
+  invoiceReceivableId String            @db.Uuid
+  linkBillet          String
+  lineBillet          String
+  barcodeBillet       String
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  deletedAt           DateTime?
+  account             Account           @relation(fields: [accountId], references: [id])
+  invoiceReceivable   InvoiceReceivable @relation(fields: [invoiceReceivableId], references: [id])
+}
+
+model InvoiceReceivablePix {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId           String            @db.Uuid
+  invoiceReceivableId String            @db.Uuid
+  qrCode              String
+  reference           String
+  linkImage           String?
+  linkPix             String?
+  linkPage            String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  deletedAt           DateTime?
+  account             Account           @relation(fields: [accountId], references: [id])
+  InvoiceReceivable   InvoiceReceivable @relation(fields: [invoiceReceivableId], references: [id])
+}
+
+model InvoiceReceivableCard {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId           String            @db.Uuid
+  invoiceReceivableId String            @db.Uuid
+  numberCard          String
+  expiresAt           String
+  brand               String
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  deletedAt           DateTime?
+  account             Account           @relation(fields: [accountId], references: [id])
+  InvoiceReceivable   InvoiceReceivable @relation(fields: [invoiceReceivableId], references: [id])
+}
+
+model Balance {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId       String   @db.Uuid
+  totalReceivable Decimal  @default(0.00) @db.Decimal
+  totalPayable    Decimal  @default(0.00) @db.Decimal
+  currentBalance  Decimal  @default(0.00) @db.Decimal
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  account         Account  @relation(fields: [accountId], references: [id])
+}
+
+model Statement {
+  id                  String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId           String             @db.Uuid
+  invoiceReceivableId String?            @db.Uuid
+  invoicePayableId    String?            @db.Uuid
+  invoicePaymentId    String?            @db.Uuid
+  amount              Decimal            @default(0.00) @db.Decimal
+  transactionType     TransactionType
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  account             Account            @relation(fields: [accountId], references: [id])
+  invoiceReceivable   InvoiceReceivable? @relation(fields: [invoiceReceivableId], references: [id])
+  invoicePayable      InvoicePayable?    @relation(fields: [invoicePayableId], references: [id])
+  invoicePayment      InvoicePayment?    @relation(fields: [invoicePaymentId], references: [id])
+}
+
+enum TransactionType {
+  RECEIVABLE
+  PAYABLE
+}

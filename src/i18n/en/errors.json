@@ -1,0 +1,16 @@
+{
+  "Error fetching users": "Error fetching users",
+  "Internal Server Error": "Internal Server Error",
+  "Email is already in use": "Email is already in use",
+  "User not found": "User not found",
+  "Unexpected field": "Unexpected field",
+  "Document type already exists": "A document of this type already exists",
+  "Document not found or does not belong to the user": "Document not found or does not belong to the user",
+  "Invalid Credentials": "Invalid Credentials",
+  "User already exists": "User already exists",
+  "Email send sucess.": "Email send sucess.",
+  "Code verify with success": "Code verify with success",
+  "Password confirmation does not match": "Password confirmation does not match",
+  "Password confirmation with sucess": "Password confirmation with sucess",
+  "Code is expired or invalid": "Code is expired or invalid"
+}
