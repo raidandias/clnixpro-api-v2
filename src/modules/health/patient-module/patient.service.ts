@@ -77,8 +77,8 @@ export class PatientService {
   ): Promise<FindAllPatientOutputDto> {
     const { page, perPage, ...queryFilters } = findAllPatientInputQueryDto;
 
-    const pageNumber = Number(page);
-    const itemsPerPage = Number(perPage);
+    const pageNumber = Number(page) || 1;
+    const itemsPerPage = Number(perPage) || 20;
 
     const [patient, totalItems] = await Promise.all([
       this.prisma.patient.findMany({
